@@ -2,124 +2,92 @@ package main
 
 import (
 	"fmt"
+	"sort"
 )
 
 type room struct {
 	C  int
 	T  int
 	V  int
+	M  int
 	ID []int
-	G  float64 // poměr svitků s časem
 }
 
-type element struct {
-	left  *element
-	right *element
-	value room
+type thing struct {
+	weight  int
+	parentX int
+	parentY int
 }
 
-func (e *element) append(v room) *element {
-	e.right = &element{e, nil, v}
-	return e.right
-}
+func solve(rooms []room, K int) (count int, path []int) {
+	var taken [][]bool
+	var bag [][]thing
+	var A, F []int
 
-func (e *element) delete() {
-	if e.right != nil {
-		e.right.left = e.left
+	path = make([]int, 0)
+	taken = make([][]bool, K)
+	bag = make([][]thing, len(rooms))
+	A = make([]int, 0)
+	F = make([]int, 0)
+	sort.Slice(rooms, func(i, j int) bool { return i < j })
+	for i := range taken {
+		taken[i] = make([]bool, K)
 	}
-	if e.left != nil {
-		e.left.right = e.right
+	for i := range bag {
+		bag[i] = make([]thing, K)
 	}
-}
+	A = append(A, 0)
+	for i := 0; i < len(rooms)-1; i++ {
+		for _, r := range A {
+			// nepřidám
+			bag[i+1][r].weight = bag[i][r].weight
+			bag[i+1][r].parentY = bag[i][r].parentY
+			bag[i+1][r].parentX = bag[i][r].parentX
+			F = append(F, r)
+			// přidám
+			if (bag[i][r].weight + rooms[i+1].V) <= rooms[i+1].T { // stihnu to?
+				var newS []int = make([]int, 0) // jaké svitky ještě nebyly
 
-func (l *element) String() (out string) {
-	if l == nil {
-		return
-	}
-	out += fmt.Sprint(l.value)
-	out += ","
-	out += l.right.String()
-	return
-}
-
-func solve(rooms *element) (save int, how []int) {
-	var previous map[int]bool
-	var this map[int]bool
-	var uniq []int
-	var tik int
-	var best *element = rooms
-	var pBest *element
-	var r *element
-
-	previous = make(map[int]bool)
-
-	for tik <= rooms.value.T {
-		for r = rooms; r != nil; r = r.right { // pročištění
-			uniq = make([]int, 0)
-			this = make(map[int]bool)
-			for _, paper := range r.value.ID { // projde zatím nesmazané svitky
-				if previous[paper] == false && this[paper] == false {
-					uniq = append(uniq, paper)
-					this[paper] = true
+				for _, svitek := range rooms[i+1].ID {
+					if !taken[r][svitek] {
+						newS = append(newS, svitek)
+					}
+				}
+				if len(newS) != 0 {
+					bag[i+1][r+len(newS)].weight = bag[i][r].weight + rooms[i+1].V
+					bag[i+1][r+len(newS)].parentX = r
+					bag[i+1][r+len(newS)].parentY = i
+					F = append(F, r+len(newS))
+					for j, s := range taken[r] {
+						taken[r+len(newS)][j] = s
+					}
+					for _, s := range newS {
+						taken[r+len(newS)][s] = true
+					}
 				}
 			}
-			r.value.ID = uniq
-			r.value.G = float64(len(r.value.ID)) / float64(r.value.V)
-			if r.value.G > best.value.G && (pBest == nil || r.value.G < pBest.value.G) {
-				best = r
-			}
 		}
-		fmt.Println(rooms)
-		// upravení výsledků
-		if pBest == best {
-			return
-		}
-		if (tik + best.value.V) <= best.value.T {
-			fmt.Println(*best)
-			for _, paper := range best.value.ID {
-				previous[paper] = true
-			}
-			pBest = nil
-			save += len(best.value.ID)
-			how = append(how, best.value.C)
-			tik += best.value.V
-			best.delete()
-			best = rooms
-		} else {
-			pBest = best
-		}
+		A = F
+		F = make([]int, 0)
 	}
 	return
 }
 
 func main() {
 	var U int
-
 	fmt.Scan(&U)
 	for i := 0; i < U; i++ {
 		var N, K int
-		var C, T, V, M int
-		var rooms, e *element
-		var ID []int
-		rooms = &element{}
-		e = rooms
-
+		var rooms []room
 		fmt.Scan(&N, &K)
-		fmt.Scan(&C, &T, &V, &M)
-		e.value = room{C, T, V, ID, float64(len(ID)) / float64(V)}
-		ID = make([]int, M)
-		for k := 0; k < M; k++ {
-			fmt.Scan(&ID[k])
-		}
-		for j := 1; j < N; j++ {
-			fmt.Scan(&C, &T, &V, &M)
-			ID = make([]int, M)
-			for k := 0; k < M; k++ {
-				fmt.Scan(&ID[k])
+		rooms = make([]room, N)
+		for j, r := range rooms {
+			fmt.Scan(&r.C, &r.T, &r.V, &r.M)
+			r.ID = make([]int, r.M)
+			for k, _ := range r.ID {
+				fmt.Scan(&r.ID[k])
 			}
-			e = e.append(room{C, T, V, ID, 0.0})
+			rooms[j] = r
 		}
-		fmt.Println(rooms)
-		fmt.Println(solve(rooms))
 	}
 }
