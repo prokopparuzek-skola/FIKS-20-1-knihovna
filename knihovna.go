@@ -40,10 +40,15 @@ func solve(rooms []room, K int) (count int, path []int) {
 	for i := 0; i < len(rooms)-1; i++ {
 		for _, r := range A {
 			// nepřidám
-			bag[i+1][r].weight = bag[i][r].weight
-			bag[i+1][r].parentY = bag[i][r].parentY
-			bag[i+1][r].parentX = bag[i][r].parentX
-			F = append(F, r)
+			if bag[i+1][r].weight == 0 || bag[i+1][r].weight > bag[i][r].weight {
+				if bag[i+1][r].weight == 0 {
+					F = append(F, r)
+				} else { // unpush
+				}
+				bag[i+1][r].weight = bag[i][r].weight
+				bag[i+1][r].parentY = bag[i][r].parentY
+				bag[i+1][r].parentX = bag[i][r].parentX
+			}
 			// přidám
 			if (bag[i][r].weight + rooms[i+1].V) <= rooms[i+1].T { // stihnu to?
 				var newS []int = make([]int, 0) // jaké svitky ještě nebyly
@@ -53,11 +58,14 @@ func solve(rooms []room, K int) (count int, path []int) {
 						newS = append(newS, svitek)
 					}
 				}
-				if len(newS) != 0 {
+				if len(newS) != 0 && bag[i+1][r+len(newS)].weight == 0 || bag[i][r].weight+rooms[i+1].V < bag[i+1][r+len(newS)].weight {
+					if bag[i+1][r+len(newS)].weight == 0 {
+						F = append(F, r)
+					} else { // unpush
+					}
 					bag[i+1][r+len(newS)].weight = bag[i][r].weight + rooms[i+1].V
 					bag[i+1][r+len(newS)].parentX = r
 					bag[i+1][r+len(newS)].parentY = i
-					F = append(F, r+len(newS))
 					for j, s := range taken[r] {
 						taken[r+len(newS)][j] = s
 					}
@@ -69,6 +77,17 @@ func solve(rooms []room, K int) (count int, path []int) {
 		}
 		A = F
 		F = make([]int, 0)
+	}
+	count = A[len(A)-1]
+	for x, y := count, len(bag)-1; x != 0; { // najdi cestu
+		path = append(path, y)
+		x = bag[y][x].parentX
+		y = bag[y][x].parentY
+	}
+	for i := 0; i < len(path)/2; i++ { // reverse
+		swp := path[i]
+		path[i] = path[len(path)-i-1]
+		path[len(path)-i-1] = swp
 	}
 	return
 }
