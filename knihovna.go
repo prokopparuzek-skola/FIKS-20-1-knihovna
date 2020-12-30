@@ -19,24 +19,52 @@ type thing struct {
 	parentY int
 }
 
+func max(arr []int) (max int) {
+	for _, i := range arr {
+		if max < i {
+			max = i
+		}
+	}
+	return
+}
+
 func solve(rooms []room, K int) (count int, path []int) {
-	var taken [][]bool
+	var taken [][][]bool
 	var bag [][]thing
 	var A, F []int
 
 	path = make([]int, 0)
-	taken = make([][]bool, K)
+	taken = make([][][]bool, len(rooms))
 	bag = make([][]thing, len(rooms))
 	A = make([]int, 0)
 	F = make([]int, 0)
-	sort.Slice(rooms, func(i, j int) bool { return i < j })
+	sort.Slice(rooms, func(i, j int) bool { return rooms[i].T < rooms[j].T })
+	fmt.Println(rooms)
 	for i := range taken {
-		taken[i] = make([]bool, K)
+		taken[i] = make([][]bool, K)
+		for j := range taken[i] {
+			taken[i][j] = make([]bool, K)
+		}
 	}
 	for i := range bag {
 		bag[i] = make([]thing, K)
 	}
 	A = append(A, 0)
+	if rooms[0].V <= rooms[0].T {
+		var svitky map[int]bool = make(map[int]bool)
+		var c int
+		for _, s := range rooms[0].ID {
+			if !svitky[s] {
+				c++
+				svitky[s] = true
+			}
+		}
+		A = append(A, c)
+		for _, s := range rooms[0].ID {
+			taken[0][rooms[0].M][s] = true
+		}
+		bag[0][rooms[0].M].weight = rooms[0].V
+	}
 	for i := 0; i < len(rooms)-1; i++ {
 		for _, r := range A {
 			// nepřidám
@@ -48,29 +76,32 @@ func solve(rooms []room, K int) (count int, path []int) {
 				bag[i+1][r].weight = bag[i][r].weight
 				bag[i+1][r].parentY = bag[i][r].parentY
 				bag[i+1][r].parentX = bag[i][r].parentX
+				for j, s := range taken[i][r] {
+					taken[i+1][r][j] = s
+				}
 			}
 			// přidám
 			if (bag[i][r].weight + rooms[i+1].V) <= rooms[i+1].T { // stihnu to?
-				var newS []int = make([]int, 0) // jaké svitky ještě nebyly
+				var newS map[int]bool = make(map[int]bool) // jaké svitky ještě nebyly
 
 				for _, svitek := range rooms[i+1].ID {
-					if !taken[r][svitek] {
-						newS = append(newS, svitek)
+					if !taken[i][r][svitek] && !newS[svitek] {
+						newS[svitek] = true
 					}
 				}
-				if len(newS) != 0 && bag[i+1][r+len(newS)].weight == 0 || bag[i][r].weight+rooms[i+1].V < bag[i+1][r+len(newS)].weight {
+				if len(newS) != 0 && (bag[i+1][r+len(newS)].weight == 0 || bag[i][r].weight+rooms[i+1].V < bag[i+1][r+len(newS)].weight) {
 					if bag[i+1][r+len(newS)].weight == 0 {
-						F = append(F, r)
+						F = append(F, r+len(newS))
 					} else { // unpush
 					}
 					bag[i+1][r+len(newS)].weight = bag[i][r].weight + rooms[i+1].V
 					bag[i+1][r+len(newS)].parentX = r
 					bag[i+1][r+len(newS)].parentY = i
-					for j, s := range taken[r] {
-						taken[r+len(newS)][j] = s
+					for j, s := range taken[i][r] {
+						taken[i+1][r+len(newS)][j] = s
 					}
-					for _, s := range newS {
-						taken[r+len(newS)][s] = true
+					for s, _ := range newS {
+						taken[i+1][r+len(newS)][s] = true
 					}
 				}
 			}
@@ -78,9 +109,15 @@ func solve(rooms []room, K int) (count int, path []int) {
 		A = F
 		F = make([]int, 0)
 	}
-	count = A[len(A)-1]
-	for x, y := count, len(bag)-1; x != 0; { // najdi cestu
-		path = append(path, y)
+	var last int
+	count = max(A)
+	if bag[len(bag)-1][count].parentY != bag[len(bag)-2][count].parentY {
+		last = len(bag) - 1
+	} else {
+		last = bag[len(bag)-1][count].parentY
+	}
+	for x, y := count, last; x != 0; { // najdi cestu
+		path = append(path, rooms[y].C)
 		x = bag[y][x].parentX
 		y = bag[y][x].parentY
 	}
@@ -108,5 +145,6 @@ func main() {
 			}
 			rooms[j] = r
 		}
+		fmt.Println(solve(rooms, K))
 	}
 }
