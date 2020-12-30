@@ -71,7 +71,6 @@ func solve(rooms []room, K int) (count int, path []int) {
 			if bag[i+1][r].weight == 0 || bag[i+1][r].weight > bag[i][r].weight {
 				if bag[i+1][r].weight == 0 {
 					F = append(F, r)
-				} else { // unpush
 				}
 				bag[i+1][r].weight = bag[i][r].weight
 				bag[i+1][r].parentY = bag[i][r].parentY
@@ -92,7 +91,6 @@ func solve(rooms []room, K int) (count int, path []int) {
 				if len(newS) != 0 && (bag[i+1][r+len(newS)].weight == 0 || bag[i][r].weight+rooms[i+1].V < bag[i+1][r+len(newS)].weight) {
 					if bag[i+1][r+len(newS)].weight == 0 {
 						F = append(F, r+len(newS))
-					} else { // unpush
 					}
 					bag[i+1][r+len(newS)].weight = bag[i][r].weight + rooms[i+1].V
 					bag[i+1][r+len(newS)].parentX = r
@@ -107,6 +105,7 @@ func solve(rooms []room, K int) (count int, path []int) {
 			}
 		}
 		A = F
+		sort.Slice(A, func(i, j int) bool { return A[i] < A[j] })
 		F = make([]int, 0)
 	}
 	var last int
