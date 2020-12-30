@@ -39,7 +39,6 @@ func solve(rooms []room, K int) (count int, path []int) {
 	A = make([]int, 0)
 	F = make([]int, 0)
 	sort.Slice(rooms, func(i, j int) bool { return rooms[i].T < rooms[j].T })
-	fmt.Println(rooms)
 	for i := range taken {
 		taken[i] = make([][]bool, K)
 		for j := range taken[i] {
@@ -144,6 +143,11 @@ func main() {
 			}
 			rooms[j] = r
 		}
-		fmt.Println(solve(rooms, K))
+		c, a := solve(rooms, K)
+		fmt.Println(c)
+		for _, r := range a[:len(a)-1] {
+			fmt.Printf("%d ", r)
+		}
+		fmt.Println(a[len(a)-1])
 	}
 }
