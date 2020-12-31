@@ -40,13 +40,13 @@ func solve(rooms []room, K int) (count int, path []int) {
 	F = make([]int, 0)
 	sort.Slice(rooms, func(i, j int) bool { return rooms[i].T < rooms[j].T })
 	for i := range taken {
-		taken[i] = make([][]bool, K)
+		taken[i] = make([][]bool, K+1)
 		for j := range taken[i] {
 			taken[i][j] = make([]bool, K)
 		}
 	}
 	for i := range bag {
-		bag[i] = make([]thing, K)
+		bag[i] = make([]thing, K+1)
 	}
 	A = append(A, 0)
 	if rooms[0].V <= rooms[0].T {
@@ -104,7 +104,6 @@ func solve(rooms []room, K int) (count int, path []int) {
 			}
 		}
 		A = F
-		sort.Slice(A, func(i, j int) bool { return A[i] < A[j] })
 		F = make([]int, 0)
 	}
 	var last int
